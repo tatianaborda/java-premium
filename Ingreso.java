@@ -6,6 +6,7 @@ public class Ingreso extends Movimiento {
 
     @Override
     public void mostrar() {
-        System.out.println("  + " + descripcion + ": $" + monto);
+        System.out.println("  + " + descripcion + ": $" + monto +
+                " [" + getFechaFormateada() + "]");
     }
 }

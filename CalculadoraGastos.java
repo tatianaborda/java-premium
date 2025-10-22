@@ -4,10 +4,8 @@ import java.util.Scanner;
 
 public class CalculadoraGastos {
 
-    // Ahora uso ArrayList en vez de arrays
     private ArrayList<Movimiento> todosLosMovimientos;
-    private HashMap<String, Gasto> gastosMap; // Para buscar rápido
-
+    private HashMap<String, Gasto> gastosMap;
     private double presupuesto;
     private Scanner scanner;
 
@@ -29,33 +27,39 @@ public class CalculadoraGastos {
             mostrarMenu();
             opcion = leerOpcion();
 
-            switch (opcion) {
-                case 1:
-                    agregarGasto();
-                    break;
-                case 2:
-                    agregarIngreso();
-                    break;
-                case 3:
-                    verTodo();
-                    break;
-                case 4:
-                    verSoloGastos();
-                    break;
-                case 5:
-                    verPorCategoria();
-                    break;
-                case 6:
-                    buscarGasto();
-                    break;
-                case 7:
-                    verResumen();
-                    break;
-                case 8:
-                    System.out.println("\nGracias por usar la calculadora!");
-                    break;
-                default:
-                    System.out.println("Opción no válida");
+            //try-catch para manejar errores
+            try {
+                switch (opcion) {
+                    case 1:
+                        agregarGasto();
+                        break;
+                    case 2:
+                        agregarIngreso();
+                        break;
+                    case 3:
+                        verTodo();
+                        break;
+                    case 4:
+                        verSoloGastos();
+                        break;
+                    case 5:
+                        verPorCategoria();
+                        break;
+                    case 6:
+                        buscarGasto();
+                        break;
+                    case 7:
+                        verResumen();
+                        break;
+                    case 8:
+                        System.out.println("Gracias por usar la calculadora!");
+                        break;
+                    default:
+                        System.out.println("Opción no válida");
+                }
+            } catch (PresupuestoInsuficienteException e) {
+                //manejo de exception
+                System.out.println("ERROR: " + e.getMessage());
             }
 
         } while (opcion != 8);
@@ -95,11 +99,12 @@ public class CalculadoraGastos {
         return opcion;
     }
 
-    private void agregarGasto() {
+    //  lanza exception si no hay presupuesto
+    private void agregarGasto() throws PresupuestoInsuficienteException {
         scanner.nextLine();
 
-        System.out.println("--- NUEVO GASTO ---");
-        System.out.print("Qué compraste/pagaste?: ");
+        System.out.println("\n--- NUEVO GASTO ---");
+        System.out.print("¿Qué compraste/pagaste?: ");
         String descripcion = scanner.nextLine();
 
         while (descripcion.trim().isEmpty()) {
@@ -107,8 +112,13 @@ public class CalculadoraGastos {
             descripcion = scanner.nextLine();
         }
 
-        System.out.print("Cuánto?: $");
+        System.out.print("¿Cuánto?: $");
         double monto = leerMonto();
+
+        // EXCEPTION validar presupuesto antes de agregar
+        if (monto > presupuesto) {
+            throw new PresupuestoInsuficienteException(monto - presupuesto);
+        }
 
         System.out.println("Categoría:");
         System.out.println("1. Comida");
@@ -121,7 +131,6 @@ public class CalculadoraGastos {
         int cat = leerCategoria();
         String categoria = "";
 
-        // Lo dejé con if-else porque me parece más claro
         if (cat == 1) {
             categoria = "Comida";
         } else if (cat == 2) {
@@ -134,13 +143,8 @@ public class CalculadoraGastos {
             categoria = "Otros";
         }
 
-        // Creo el objeto Gasto
         Gasto nuevoGasto = new Gasto(descripcion, monto, categoria);
-
-        // Lo agrego al ArrayList
         todosLosMovimientos.add(nuevoGasto);
-
-        // Y tambn al HashMap para buscarlo despues
         gastosMap.put(descripcion.toLowerCase(), nuevoGasto);
 
         presupuesto = presupuesto - monto;
@@ -158,7 +162,7 @@ public class CalculadoraGastos {
         scanner.nextLine();
 
         System.out.println("--- NUEVO INGRESO ---");
-        System.out.print("¿De dónde vino la plata?: ");
+        System.out.print("De dónde vino la plata?: ");
         String descripcion = scanner.nextLine();
 
         while (descripcion.trim().isEmpty()) {
@@ -169,13 +173,12 @@ public class CalculadoraGastos {
         System.out.print("¿Cuánto?: $");
         double monto = leerMonto();
 
-        // Creo el objeto Ingreso
         Ingreso nuevoIngreso = new Ingreso(descripcion, monto);
         todosLosMovimientos.add(nuevoIngreso);
 
         presupuesto = presupuesto + monto;
 
-        System.out.println("\nOk! Ingreso registrado");
+        System.out.println("Ok! Ingreso registrado");
         System.out.println("Ingresaste: $" + monto);
         System.out.println("Ahora tenés: $" + presupuesto);
     }
@@ -188,7 +191,6 @@ public class CalculadoraGastos {
             return;
         }
 
-        // Aca el polimorfismo cada uno se muestra diferente
         for (Movimiento m : todosLosMovimientos) {
             m.mostrar();
         }
@@ -201,7 +203,6 @@ public class CalculadoraGastos {
 
         int contador = 0;
 
-        // Filtro solo los gastos usando instanceof
         for (Movimiento m : todosLosMovimientos) {
             if (m instanceof Gasto) {
                 m.mostrar();
@@ -228,7 +229,7 @@ public class CalculadoraGastos {
         System.out.println("3. Entretenimiento");
         System.out.println("4. Salud");
         System.out.println("5. Otros");
-        System.out.print("¿Cuál querés ver?: ");
+        System.out.print("Cuál querés ver?: ");
 
         int cat = leerCategoria();
         String categoriaElegida = "";
@@ -266,10 +267,9 @@ public class CalculadoraGastos {
         scanner.nextLine();
 
         System.out.println("--- BUSCAR GASTO ---");
-        System.out.print("¿Qué gasto querés buscar?: ");
+        System.out.print("Qué gasto querés buscar?: ");
         String buscar = scanner.nextLine().toLowerCase();
 
-        // Acá uso el HashMap para buscar rápido
         Gasto encontrado = gastosMap.get(buscar);
 
         if (encontrado != null) {
@@ -295,7 +295,6 @@ public class CalculadoraGastos {
         int cantGastos = 0;
         int cantIngresos = 0;
 
-        // Separo gastos de ingresos
         for (Movimiento m : todosLosMovimientos) {
             if (m instanceof Gasto) {
                 totalGastos = totalGastos + m.getMonto();
@@ -316,7 +315,6 @@ public class CalculadoraGastos {
             System.out.println("Promedio por gasto: $" + promedio);
         }
 
-        // Muestro por categoría
         System.out.println("Por categoría:");
         mostrarPorCategorias();
     }
