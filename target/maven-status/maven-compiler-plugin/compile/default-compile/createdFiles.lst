@@ -1,0 +1,5 @@
+src\main\java\com\codigofacilito\gastos\CalculadoraGastos.class
+src\main\java\com\codigofacilito\gastos\Ingreso.class
+src\main\java\com\codigofacilito\gastos\Movimiento.class
+src\main\java\com\codigofacilito\gastos\PresupuestoInsuficienteException.class
+src\main\java\com\codigofacilito\gastos\Gasto.class

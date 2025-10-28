@@ -1,3 +1,5 @@
+package src.main.java.com.codigofacilito.gastos;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 

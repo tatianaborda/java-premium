@@ -1,3 +1,5 @@
+package src.main.java.com.codigofacilito.gastos;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -149,7 +151,7 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto - monto;
 
-        System.out.println("Ok! Gasto registrado");
+        System.out.println("Ok! src.main.java.com.codigofacilito.gastos.Gasto registrado");
         System.out.println("Gastaste: $" + monto);
         System.out.println("Te quedan: $" + presupuesto);
 
@@ -178,7 +180,7 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto + monto;
 
-        System.out.println("Ok! Ingreso registrado");
+        System.out.println("Ok! src.main.java.com.codigofacilito.gastos.Ingreso registrado");
         System.out.println("Ingresaste: $" + monto);
         System.out.println("Ahora tenés: $" + presupuesto);
     }

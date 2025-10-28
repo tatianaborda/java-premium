@@ -1,3 +1,5 @@
+package src.main.java.com.codigofacilito.gastos;
+
 public class Ingreso extends Movimiento {
 
     public Ingreso(String descripcion, double monto) {

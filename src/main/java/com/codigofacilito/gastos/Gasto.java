@@ -1,3 +1,5 @@
+package src.main.java.com.codigofacilito.gastos;
+
 public class Gasto extends Movimiento {
     private String categoria;
 

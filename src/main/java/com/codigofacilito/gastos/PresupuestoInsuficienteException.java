@@ -1,3 +1,5 @@
+package src.main.java.com.codigofacilito.gastos;
+
 public class PresupuestoInsuficienteException extends Exception {
     private double faltante;
 
