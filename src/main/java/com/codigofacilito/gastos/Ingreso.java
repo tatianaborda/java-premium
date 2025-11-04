@@ -1,7 +1,9 @@
 package src.main.java.com.codigofacilito.gastos;
 
-public class Ingreso extends Movimiento {
+import java.io.Serializable;
 
+public class Ingreso extends Movimiento implements Serializable {
+    private static final long serialVersionUID = 1L;
     public Ingreso(String descripcion, double monto) {
         super(descripcion, monto);
     }

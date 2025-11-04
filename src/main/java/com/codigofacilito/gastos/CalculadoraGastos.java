@@ -1,10 +1,14 @@
 package src.main.java.com.codigofacilito.gastos;
 
+import java.io.*;  // Para FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class CalculadoraGastos {
+
+    // Nombre del archivo donde se guardarán los datos
+    private static final String ARCHIVO_DATOS = "gastos.dat";
 
     private ArrayList<Movimiento> todosLosMovimientos;
     private HashMap<String, Gasto> gastosMap;
@@ -16,7 +20,68 @@ public class CalculadoraGastos {
         gastosMap = new HashMap<>();
         presupuesto = 0.0;
         scanner = new Scanner(System.in);
+
+        // CARGAR DATOS AL INICIAR
+        cargarDatos();  // Intenta cargar datos previos si existen
     }
+
+    /**
+     * GUARDAR DATOS
+     * Guarda todos los datos usando serialización
+     * Convierte los objetos a bytes y los escribe en un archivo
+     */
+    private void guardarDatos() {
+        try (FileOutputStream fos = new FileOutputStream(ARCHIVO_DATOS);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+
+            // Guardar el ArrayList de movimientos
+            oos.writeObject(todosLosMovimientos);
+
+            // Guardar el HashMap de gastos
+            oos.writeObject(gastosMap);
+
+            // Guardar el presupuesto actual
+            oos.writeDouble(presupuesto);
+
+            System.out.println(" Datos guardados correctamente");
+
+        } catch (IOException e) {
+            System.out.println("Error al guardar datos: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")  // Suprime el warning de cast
+    private void cargarDatos() {
+        File archivo = new File(ARCHIVO_DATOS);
+
+        // Verificar si existe el archivo
+        if (!archivo.exists()) {
+            System.out.println("No hay datos previos. Iniciando desde cero.");
+            return;
+        }
+
+        try (FileInputStream fis = new FileInputStream(ARCHIVO_DATOS);
+             ObjectInputStream ois = new ObjectInputStream(fis)) {
+
+            // Leer el ArrayList de movimientos
+            // readObject() devuelve Object, por eso hacemos cast
+            todosLosMovimientos = (ArrayList<Movimiento>) ois.readObject();
+
+            // Leer el HashMap de gastos
+            gastosMap = (HashMap<String, Gasto>) ois.readObject();
+
+            // Leer el presupuesto
+            presupuesto = ois.readDouble();
+
+            System.out.println("✅ Datos cargados correctamente");
+            System.out.println("   Movimientos recuperados: " + todosLosMovimientos.size());
+
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error al cargar datos: " + e.getMessage());
+            System.out.println(" Iniciando desde cero.");
+        }
+    }
+
 
     public void empezar() {
         System.out.println("===========================================");
@@ -54,6 +119,8 @@ public class CalculadoraGastos {
                         verResumen();
                         break;
                     case 8:
+                        System.out.println("Guardando datos...");
+                        guardarDatos();  // Guardar antes de cerrar
                         System.out.println("Gracias por usar la calculadora!");
                         break;
                     default:
@@ -151,7 +218,7 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto - monto;
 
-        System.out.println("Ok! src.main.java.com.codigofacilito.gastos.Gasto registrado");
+        System.out.println("Ok! Gasto registrado");
         System.out.println("Gastaste: $" + monto);
         System.out.println("Te quedan: $" + presupuesto);
 
@@ -180,7 +247,7 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto + monto;
 
-        System.out.println("Ok! src.main.java.com.codigofacilito.gastos.Ingreso registrado");
+        System.out.println("Ingreso registrado");
         System.out.println("Ingresaste: $" + monto);
         System.out.println("Ahora tenés: $" + presupuesto);
     }

@@ -1,9 +1,11 @@
 package src.main.java.com.codigofacilito.gastos;
-
+import java.io.Serializable;  // ← AGREGAR
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public abstract class Movimiento {
+// CAMBIO: implementamos Serializable
+public abstract class Movimiento implements Serializable {
+    private static final long serialVersionUID = 1L;
     protected String descripcion;
     protected double monto;
     protected LocalDateTime fecha;
