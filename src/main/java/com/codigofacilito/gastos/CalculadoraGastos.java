@@ -1,14 +1,15 @@
 package src.main.java.com.codigofacilito.gastos;
 
-import java.io.*;  // Para FileInputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class CalculadoraGastos {
 
-    // Nombre del archivo donde se guardarán los datos
-    private static final String ARCHIVO_DATOS = "gastos.dat";
+    // configuracion
+    private ConfiguracionApp configuracion;
+    private String ARCHIVO_DATOS;  // Ya no es final, se lee de config
 
     private ArrayList<Movimiento> todosLosMovimientos;
     private HashMap<String, Gasto> gastosMap;
@@ -16,45 +17,37 @@ public class CalculadoraGastos {
     private Scanner scanner;
 
     public CalculadoraGastos() {
+        // NUEVO: Cargar configuración primero
+        configuracion = new ConfiguracionApp();
+        ARCHIVO_DATOS = configuracion.getArchivoDatos();
+
         todosLosMovimientos = new ArrayList<>();
         gastosMap = new HashMap<>();
         presupuesto = 0.0;
         scanner = new Scanner(System.in);
 
-        // CARGAR DATOS AL INICIAR
-        cargarDatos();  // Intenta cargar datos previos si existen
+        cargarDatos();
     }
 
-    /**
-     * GUARDAR DATOS
-     * Guarda todos los datos usando serialización
-     * Convierte los objetos a bytes y los escribe en un archivo
-     */
     private void guardarDatos() {
         try (FileOutputStream fos = new FileOutputStream(ARCHIVO_DATOS);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
 
-            // Guardar el ArrayList de movimientos
             oos.writeObject(todosLosMovimientos);
-
-            // Guardar el HashMap de gastos
             oos.writeObject(gastosMap);
-
-            // Guardar el presupuesto actual
             oos.writeDouble(presupuesto);
 
-            System.out.println(" Datos guardados correctamente");
+            System.out.println("✅ Datos guardados correctamente");
 
         } catch (IOException e) {
             System.out.println("Error al guardar datos: " + e.getMessage());
         }
     }
 
-    @SuppressWarnings("unchecked")  // Suprime el warning de cast
+    @SuppressWarnings("unchecked")
     private void cargarDatos() {
         File archivo = new File(ARCHIVO_DATOS);
 
-        // Verificar si existe el archivo
         if (!archivo.exists()) {
             System.out.println("No hay datos previos. Iniciando desde cero.");
             return;
@@ -63,14 +56,8 @@ public class CalculadoraGastos {
         try (FileInputStream fis = new FileInputStream(ARCHIVO_DATOS);
              ObjectInputStream ois = new ObjectInputStream(fis)) {
 
-            // Leer el ArrayList de movimientos
-            // readObject() devuelve Object, por eso hacemos cast
             todosLosMovimientos = (ArrayList<Movimiento>) ois.readObject();
-
-            // Leer el HashMap de gastos
             gastosMap = (HashMap<String, Gasto>) ois.readObject();
-
-            // Leer el presupuesto
             presupuesto = ois.readDouble();
 
             System.out.println("✅ Datos cargados correctamente");
@@ -78,14 +65,14 @@ public class CalculadoraGastos {
 
         } catch (IOException | ClassNotFoundException e) {
             System.out.println("Error al cargar datos: " + e.getMessage());
-            System.out.println(" Iniciando desde cero.");
+            System.out.println("Iniciando desde cero.");
         }
     }
 
-
     public void empezar() {
         System.out.println("===========================================");
-        System.out.println("   CALCULADORA DE GASTOS PERSONALES");
+        // NUEVO: Usar nombre desde configuración
+        System.out.println("   " + configuracion.getNombreApp());
         System.out.println("===========================================");
 
         int opcion;
@@ -94,7 +81,6 @@ public class CalculadoraGastos {
             mostrarMenu();
             opcion = leerOpcion();
 
-            //try-catch para manejar errores
             try {
                 switch (opcion) {
                     case 1:
@@ -120,14 +106,13 @@ public class CalculadoraGastos {
                         break;
                     case 8:
                         System.out.println("Guardando datos...");
-                        guardarDatos();  // Guardar antes de cerrar
+                        guardarDatos();
                         System.out.println("Gracias por usar la calculadora!");
                         break;
                     default:
                         System.out.println("Opción no válida");
                 }
             } catch (PresupuestoInsuficienteException e) {
-                //manejo de exception
                 System.out.println("ERROR: " + e.getMessage());
             }
 
@@ -146,7 +131,16 @@ public class CalculadoraGastos {
         System.out.println("6. Buscar un gasto");
         System.out.println("7. Ver resumen");
         System.out.println("8. Salir");
-        System.out.println("Disponible: $" + presupuesto);
+
+        // NUEVO: Usar símbolo de moneda desde config
+        String simbolo = configuracion.getSimboloMoneda();
+        System.out.println("Disponible: " + simbolo + presupuesto);
+
+        // NUEVO: Alerta si presupuesto bajo
+        if (presupuesto > 0 && presupuesto < configuracion.getAlertaPresupuestoBajo()) {
+            System.out.println("⚠️ ALERTA: Presupuesto bajo!");
+        }
+
         System.out.print("Opción: ");
     }
 
@@ -168,7 +162,6 @@ public class CalculadoraGastos {
         return opcion;
     }
 
-    //  lanza exception si no hay presupuesto
     private void agregarGasto() throws PresupuestoInsuficienteException {
         scanner.nextLine();
 
@@ -181,36 +174,30 @@ public class CalculadoraGastos {
             descripcion = scanner.nextLine();
         }
 
-        System.out.print("¿Cuánto?: $");
+        // NUEVO: Usar símbolo desde config
+        String simbolo = configuracion.getSimboloMoneda();
+        System.out.print("¿Cuánto?: " + simbolo);
         double monto = leerMonto();
 
-        // EXCEPTION validar presupuesto antes de agregar
         if (monto > presupuesto) {
             throw new PresupuestoInsuficienteException(monto - presupuesto);
         }
 
+        // NUEVO: Alerta para gasto grande
+        if (monto > configuracion.getAlertaGastoGrande()) {
+            System.out.println("⚠️ Este es un gasto grande!");
+        }
+
+        // NUEVO: Usar categorías desde configuración
         System.out.println("Categoría:");
-        System.out.println("1. Comida");
-        System.out.println("2. Transporte");
-        System.out.println("3. Entretenimiento");
-        System.out.println("4. Salud");
-        System.out.println("5. Otros");
+        String[] categorias = configuracion.getCategorias();
+        for (int i = 0; i < categorias.length; i++) {
+            System.out.println((i + 1) + ". " + categorias[i]);
+        }
         System.out.print("Elegí: ");
 
         int cat = leerCategoria();
-        String categoria = "";
-
-        if (cat == 1) {
-            categoria = "Comida";
-        } else if (cat == 2) {
-            categoria = "Transporte";
-        } else if (cat == 3) {
-            categoria = "Entretenimiento";
-        } else if (cat == 4) {
-            categoria = "Salud";
-        } else {
-            categoria = "Otros";
-        }
+        String categoria = categorias[cat - 1];
 
         Gasto nuevoGasto = new Gasto(descripcion, monto, categoria);
         todosLosMovimientos.add(nuevoGasto);
@@ -218,12 +205,12 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto - monto;
 
-        System.out.println("Ok! Gasto registrado");
-        System.out.println("Gastaste: $" + monto);
-        System.out.println("Te quedan: $" + presupuesto);
+        System.out.println("✅ Gasto registrado");
+        System.out.println("Gastaste: " + simbolo + monto);
+        System.out.println("Te quedan: " + simbolo + presupuesto);
 
         if (presupuesto < 0) {
-            System.out.println("OJO! Estás en negativo!");
+            System.out.println("⚠️ OJO! Estás en negativo!");
         }
     }
 
@@ -239,7 +226,9 @@ public class CalculadoraGastos {
             descripcion = scanner.nextLine();
         }
 
-        System.out.print("¿Cuánto?: $");
+        // NUEVO: Usar símbolo desde config
+        String simbolo = configuracion.getSimboloMoneda();
+        System.out.print("¿Cuánto?: " + simbolo);
         double monto = leerMonto();
 
         Ingreso nuevoIngreso = new Ingreso(descripcion, monto);
@@ -247,9 +236,9 @@ public class CalculadoraGastos {
 
         presupuesto = presupuesto + monto;
 
-        System.out.println("Ingreso registrado");
-        System.out.println("Ingresaste: $" + monto);
-        System.out.println("Ahora tenés: $" + presupuesto);
+        System.out.println("✅ Ingreso registrado");
+        System.out.println("Ingresaste: " + simbolo + monto);
+        System.out.println("Ahora tenés: " + simbolo + presupuesto);
     }
 
     private void verTodo() {
@@ -292,22 +281,16 @@ public class CalculadoraGastos {
             return;
         }
 
+        // NUEVO: Usar categorías desde configuración
         System.out.println("--- FILTRAR POR CATEGORIA ---");
-        System.out.println("1. Comida");
-        System.out.println("2. Transporte");
-        System.out.println("3. Entretenimiento");
-        System.out.println("4. Salud");
-        System.out.println("5. Otros");
+        String[] categorias = configuracion.getCategorias();
+        for (int i = 0; i < categorias.length; i++) {
+            System.out.println((i + 1) + ". " + categorias[i]);
+        }
         System.out.print("Cuál querés ver?: ");
 
         int cat = leerCategoria();
-        String categoriaElegida = "";
-
-        if (cat == 1) categoriaElegida = "Comida";
-        else if (cat == 2) categoriaElegida = "Transporte";
-        else if (cat == 3) categoriaElegida = "Entretenimiento";
-        else if (cat == 4) categoriaElegida = "Salud";
-        else categoriaElegida = "Otros";
+        String categoriaElegida = categorias[cat - 1];
 
         System.out.println("Gastos en: " + categoriaElegida);
 
@@ -389,7 +372,8 @@ public class CalculadoraGastos {
     }
 
     private void mostrarPorCategorias() {
-        String[] categorias = {"Comida", "Transporte", "Entretenimiento", "Salud", "Otros"};
+        // NUEVO: Usar categorías desde configuración
+        String[] categorias = configuracion.getCategorias();
 
         for (String cat : categorias) {
             double total = 0;
